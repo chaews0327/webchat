@@ -6,6 +6,8 @@ import aiohttp_jinja2
 from aiohttp import web
 from views import index, ws_key
 
+import redis.asyncio as redis
+
 import os
 
 
@@ -14,11 +16,12 @@ async def init_app():
     app = web.Application()
 
     app[ws_key] = {}
+    app['redis'] = await redis.from_url('redis://localhost:6379')
 
     app.on_shutdown.append(shutdown)
 
     aiohttp_jinja2.setup(
-        app, loader=jinja2.FileSystemLoader(os.getcwd() + "/template"))
+        app, loader=jinja2.FileSystemLoader(os.getcwd() + '/template'))
 
     app.router.add_get('/', index)
 
@@ -26,9 +29,9 @@ async def init_app():
 
 
 async def shutdown(app):
-    for ws in app[ws_key].values():
-        await ws.close()
-    app[ws_key].clear()
+    # TODO
+    await app['redis'].close()
+    
 
 
 async def get_app():
