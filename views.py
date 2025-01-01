@@ -21,7 +21,7 @@ def get_random_name():
 def set_user_id(request, response):
     user_id = get_random_name()
     response.set_cookie('user_id', user_id, max_age=60*60*24)
-    return response
+    return user_id
 
 
 async def handle_redis_message(app, pubsub):
