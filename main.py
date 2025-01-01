@@ -1,14 +1,11 @@
 import logging
-
 import jinja2
-
 import aiohttp_jinja2
+import aiohttp
 from aiohttp import web
 from views import index, ws_key, handle_redis_message
-
 import redis.asyncio as redis
 import asyncio
-
 import os
 
 
@@ -32,13 +29,15 @@ async def init_app():
 
 
 async def shutdown(app):
-    # TODO
     app['redis_pubsub_task'].cancel()
     
     try:
         await app['redis_pubsub_task']
     except asyncio.CancelledError:
         pass
+    
+    for ws in app[ws_key].values():
+        await ws.close(code=aiohttp.WSCloseCode.GOING_AWAY)
     
     await app['redis'].close()
     
