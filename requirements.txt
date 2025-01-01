@@ -1,0 +1,4 @@
+aiohttp==3.9.5
+redis==5.2.1
+aiohttp-jinja2==1.6
+faker==33.1.0
