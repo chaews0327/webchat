@@ -4,9 +4,10 @@ import jinja2
 
 import aiohttp_jinja2
 from aiohttp import web
-from views import index, ws_key
+from views import index, ws_key, handle_redis_message
 
 import redis.asyncio as redis
+import asyncio
 
 import os
 
@@ -17,6 +18,7 @@ async def init_app():
 
     app[ws_key] = {}
     app['redis'] = await redis.from_url('redis://localhost:6379')
+    app['redis_pubsub_task'] = asyncio.create_task(handle_redis_message(app, app['redis'].pubsub()))
 
     app.on_shutdown.append(shutdown)
 
@@ -30,6 +32,13 @@ async def init_app():
 
 async def shutdown(app):
     # TODO
+    app['redis_pubsub_task'].cancel()
+    
+    try:
+        await app['redis_pubsub_task']
+    except asyncio.CancelledError:
+        pass
+    
     await app['redis'].close()
     
 
