@@ -17,7 +17,8 @@ async def init_app():
     app = web.Application()
 
     app[ws_key] = {}
-    app['redis'] = await redis.from_url('redis://localhost:6379')
+    # app['redis'] = await redis.from_url('redis://localhost:6379')
+    app['redis'] = await redis.from_url('redis://redis:6379')
     app['redis_pubsub_task'] = asyncio.create_task(handle_redis_message(app, app['redis'].pubsub()))
 
     app.on_shutdown.append(shutdown)
@@ -55,7 +56,7 @@ def main():
     logging.basicConfig(level=logging.DEBUG)
 
     app = init_app()
-    web.run_app(app)
+    web.run_app(app, reuse_port=True)
 
 
 if __name__ == '__main__':

@@ -8,8 +8,8 @@ from faker import Faker
 import asyncio
 import json
 
-log = logging.getLogger(__name__)
 
+log = logging.getLogger(__name__)
 ws_key = web.AppKey("ws_key", dict[str, web.WebSocketResponse])
 
 
@@ -80,7 +80,7 @@ async def handle_websocket(request, user_id):
     return ws_current
 
 
-async def index(request):  
+async def index(request):
     user_id = request.cookies.get('user_id')
     
     if not user_id:
