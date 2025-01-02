@@ -3,6 +3,8 @@ import jinja2
 import aiohttp_jinja2
 import aiohttp
 from aiohttp import web
+import aiohttp_session
+from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from views import index, ws_key, handle_redis_message
 import redis.asyncio as redis
 import asyncio
@@ -16,9 +18,13 @@ async def init_app():
     app[ws_key] = {}
     # app['redis'] = await redis.from_url('redis://localhost:6379')
     app['redis'] = await redis.from_url('redis://redis:6379')
-    app['redis_pubsub_task'] = asyncio.create_task(handle_redis_message(app, app['redis'].pubsub()))
+    app['redis_pubsub_task'] = asyncio.create_task(
+        handle_redis_message(app, app['redis'].pubsub()))
 
     app.on_shutdown.append(shutdown)
+
+    secret_key = b'Thirty  two  length  bytes  key.'
+    aiohttp_session.setup(app, EncryptedCookieStorage(secret_key))
 
     aiohttp_jinja2.setup(
         app, loader=jinja2.FileSystemLoader(os.getcwd() + '/template'))
@@ -30,17 +36,16 @@ async def init_app():
 
 async def shutdown(app):
     app['redis_pubsub_task'].cancel()
-    
+
     try:
         await app['redis_pubsub_task']
     except asyncio.CancelledError:
         pass
-    
+
     for ws in app[ws_key].values():
         await ws.close(code=aiohttp.WSCloseCode.GOING_AWAY)
-    
+
     await app['redis'].close()
-    
 
 
 async def get_app():
