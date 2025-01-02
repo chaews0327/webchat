@@ -5,7 +5,7 @@ import aiohttp
 from aiohttp import web
 import aiohttp_session
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
-from views import index, ws_key, handle_redis_message
+from views import index, ws_key, broadcast_message_to_clients
 import redis.asyncio as redis
 import asyncio
 import os
@@ -16,17 +16,15 @@ async def init_app():
     app = web.Application()
 
     app[ws_key] = {}
-    # app['redis'] = await redis.from_url('redis://localhost:6379')
     app['redis'] = await redis.from_url('redis://redis:6379')
     app['redis_pubsub_task'] = asyncio.create_task(
-        handle_redis_message(app, app['redis'].pubsub()))
+        broadcast_message_to_clients(app, app['redis'].pubsub()))
 
     app.on_shutdown.append(shutdown)
 
     secret_key = b'Thirty  two  length  bytes  key.'
     aiohttp_session.setup(app, EncryptedCookieStorage(secret_key))
 
-    print(os.getcwd())
     aiohttp_jinja2.setup(
         app, loader=jinja2.FileSystemLoader(os.getcwd() + '/webchat/template'))
 
