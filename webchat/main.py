@@ -1,11 +1,11 @@
-import logging
 import jinja2
 import aiohttp_jinja2
 import aiohttp
 from aiohttp import web
 import aiohttp_session
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
-from views import index, ws_key, broadcast_message_to_clients
+from views import index
+from chat_service import broadcast_message_to_clients, ws_key
 import redis.asyncio as redis
 import asyncio
 import os
@@ -56,8 +56,6 @@ async def get_app():
 
 
 def main():
-    logging.basicConfig(level=logging.DEBUG)
-
     app = init_app()
     web.run_app(app, reuse_port=True)
 
