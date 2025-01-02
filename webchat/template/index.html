@@ -1,116 +1,218 @@
 <!DOCTYPE html>
 <meta charset="utf-8" />
-<html>
+<html lang="en">
   <head>
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js">
-    </script>
-    <script language="javascript" type="text/javascript">
-     $(function() {
-       var conn = null;
-       var name = "UNKNOWN";
-       function log(msg) {
-         var control = $('#log');
-         var date = new Date();
-         var date_prompt = '(' + date.toISOString().split('T')[1].slice(0,8) + ') ';
-         control.html(control.html() + date_prompt + msg + '<br/>');
-         control.scrollTop(control.scrollTop() + 1000);
-       }
-       function connect() {
-         disconnect();
-         var wsUri = (window.location.protocol=='https:'&&'wss://'||'ws://')+window.location.host;
-         conn = new WebSocket(wsUri);
-         //log('Connecting...');
-         conn.onopen = function() {
-           //log('Connected.');
-           update_ui();
-         };
-         conn.onmessage = function(e) {
-           var data = JSON.parse(e.data);
-           switch (data.action) {
-             case  'connect':
-               name = data.name;
-               log('Connected as ' + name);
-               update_ui();
-               break;
-             case  'disconnect':
-               name = data.name;
-               log('Disconnected ' + name);
-               update_ui();
-               break;
-             case 'join':
-               log('Joined ' + data.name);
-               break;
-             case 'sent':
-               log(data.name + ': ' + data.message);
-               break;
-           }
-         };
-         conn.onclose = function() {
-           log('Disconnected.');
-           conn = null;
-           update_ui();
-         };
-       }
-       function disconnect() {
-         if (conn != null) {
-           //log('Disconnecting...');
-           conn.close();
-           conn = null;
-           name = 'UNKNOWN';
-           update_ui();
-         }
-       }
-       function update_ui() {
-         if (conn == null) {
-           $('#status').text('disconnected');
-           $('#connect').html('Connect');
-           $('#send').prop("disabled", true);
-         } else {
-           $('#status').text('connected (' + conn.protocol + ')');
-           $('#connect').html('Disconnect');
-           $('#send').prop("disabled", false);
-         }
-         $('#name').text(name);
-       }
-       $('#connect').on('click', function() {
-         if (conn == null) {
-           connect();
-         } else {
-           disconnect();
-         }
-         update_ui();
-         return false;
-       });
-       $('#send').on('click', function() {
-         var text = $('#text').val();
-         // log('Sending: ' + text);
-         log(text);
-         conn.send(text);
-         $('#text').val('').focus();
-         return false;
-       });
-       $('#text').on('keyup', function(e) {
-         if (e.keyCode === 13) {
-           $('#send').click();
-           return false;
-         }
-       });
-     });
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Room</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'Roboto', sans-serif;
+        background-color: #f0f2f5;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        width: 400px;
+        max-width: 100%;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+
+      .header {
+        background: #4caf50;
+        color: white;
+        padding: 15px;
+        text-align: center;
+      }
+
+      .chat-box {
+        height: 300px;
+        overflow-y: scroll;
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+        background-color: #f9f9f9;
+      }
+
+      .message {
+        margin-bottom: 10px;
+        padding: 8px;
+        background: #e1f5fe;
+        border-radius: 8px;
+        max-width: 80%;
+        margin-left: 10px;
+        margin-right: 10px;
+      }
+
+      .message-sent {
+        background: #c8e6c9;
+        align-self: flex-end;
+      }
+
+      .input-container {
+        display: flex;
+        padding: 10px;
+        background: #f1f1f1;
+        border-top: 1px solid #ddd;
+      }
+
+      #text {
+        flex: 1;
+        padding: 10px;
+        border-radius: 20px;
+        border: 1px solid #ddd;
+        font-size: 14px;
+        margin-right: 10px;
+      }
+
+      #send {
+        background-color: #4caf50;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+
+      #send:disabled {
+        background-color: #b0bec5;
+        cursor: not-allowed;
+      }
+
+      .status {
+        font-size: 12px;
+        color: #888;
+        margin-top: 10px;
+      }
+
+      .status span {
+        color: #4caf50;
+        font-weight: bold;
+      }
+    </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script>
+      $(function() {
+        var conn = null;
+        var name = "UNKNOWN";
+
+        function log(msg) {
+          var control = $('#log');
+          var date = new Date();
+          var date_prompt = '(' + date.toISOString().split('T')[1].slice(0,8) + ') ';
+          control.html(control.html() + date_prompt + msg + '<br/>');
+          control.scrollTop(control.scrollTop() + 1000);
+        }
+
+        function connect() {
+          disconnect();
+          var wsUri = (window.location.protocol=='https:' && 'wss://' || 'ws://') + window.location.host;
+          conn = new WebSocket(wsUri);
+          
+          conn.onopen = function() {
+            update_ui();
+          };
+
+          conn.onmessage = function(e) {
+            var data = JSON.parse(e.data);
+            switch (data.action) {
+              case 'connect':
+                name = data.name;
+                log('Connected as ' + name);
+                update_ui();
+                break;
+              case 'disconnect':
+                name = data.name;
+                log('Disconnected ' + name);
+                update_ui();
+                break;
+              case 'join':
+                log(data.name + ' has joined the chat');
+                break;
+              case 'sent':
+                log(data.name + ': ' + data.message);
+                break;
+            }
+          };
+
+          conn.onclose = function() {
+            log('Disconnected.');
+            conn = null;
+            update_ui();
+          };
+        }
+
+        function disconnect() {
+          if (conn != null) {
+            conn.close();
+            conn = null;
+            name = 'UNKNOWN';
+            update_ui();
+          }
+        }
+
+        function update_ui() {
+          if (conn == null) {
+            $('#status').text('Disconnected');
+            $('#connect').html('Connect');
+            $('#send').prop("disabled", true);
+          } else {
+            $('#status').text('Connected');
+            $('#connect').html('Disconnect');
+            $('#send').prop("disabled", false);
+          }
+          $('#name').text(name);
+        }
+
+        $('#connect').on('click', function() {
+          if (conn == null) {
+            connect();
+          } else {
+            disconnect();
+          }
+          update_ui();
+          return false;
+        });
+
+        $('#send').on('click', function() {
+          var text = $('#text').val();
+          log(text);
+          conn.send(text);
+          $('#text').val('').focus();
+          return false;
+        });
+
+        $('#text').on('keyup', function(e) {
+          if (e.keyCode === 13) {
+            $('#send').click();
+            return false;
+          }
+        });
+      });
     </script>
   </head>
   <body>
-    <h3>Chat!</h3>
-    <div>
-      <button id="connect">Connect</button>&nbsp;|&nbsp;Status:
-      <span id="name">UNKNOWN</span>
-      <span id="status">disconnected</span>
+    <div class="container">
+      <div class="header">
+        <h3>Chat Room</h3>
+        <div>
+          <button id="connect">Connect</button> | Status: <span id="name">UNKNOWN</span> <span id="status">Disconnected</span>
+        </div>
+      </div>
+      <div class="chat-box" id="log"></div>
+      <div class="input-container">
+        <input id="text" type="text" placeholder="Type a message..." />
+        <button id="send" type="button" disabled>Send</button>
+      </div>
+      <div class="status" id="status"></div>
     </div>
-    <div id="log"
-         style="width:20em;height:15em;overflow:auto;border:1px solid black">
-    </div>
-    <form id="chatform" onsubmit="return false;">
-      <input id="text" type="text" />
-      <input id="send" type="button" value="Send" disabled/>
-    </form>
   </body>
 </html>
