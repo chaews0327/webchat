@@ -107,7 +107,13 @@
         function log(msg) {
           var control = $('#log');
           var date = new Date();
-          var date_prompt = '(' + date.toISOString().split('T')[1].slice(0,8) + ') ';
+          var formatter = new Intl.DateTimeFormat('en-GB', {
+            timeZone: 'Asia/Seoul',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+          });
+          var date_prompt = '(' + formatter.format(date) + ') ';
           control.html(control.html() + date_prompt + msg + '<br/>');
           control.scrollTop(control.scrollTop() + 1000);
         }
