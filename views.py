@@ -12,17 +12,6 @@ log = logging.getLogger(__name__)
 ws_key = web.AppKey("ws_key", dict[str, web.WebSocketResponse])
 
 
-def get_random_name():
-    fake = Faker()
-    return fake.name()
-
-
-def set_user_id(request, response):
-    user_id = get_random_name()
-    response.set_cookie('user_id', user_id, max_age=60*60*24)
-    return user_id
-
-
 async def handle_redis_message(app, pubsub):
     await pubsub.subscribe('chat_room')
     while True:
@@ -84,7 +73,7 @@ async def index(request):
     user_id = session.get('user_id')
 
     if not user_id:
-        user_id = get_random_name()
+        user_id = Faker().name()
         session['user_id'] = user_id
 
     return await handle_websocket(request, user_id)
