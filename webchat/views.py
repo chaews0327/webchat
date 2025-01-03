@@ -1,5 +1,5 @@
 import aiohttp_session
-from faker import Faker
+from uuid import uuid4 as uuid
 from chat_service import manage_websocket_connection
 
 
@@ -8,7 +8,8 @@ async def index(request):
     user_id = session.get('user_id')
 
     if not user_id:
-        user_id = Faker().name()
-        session['user_id'] = user_id
+        # user_id = Faker().name()
+        user_id = uuid().hex
+        session['user_id'] = str(user_id)[:4]
 
     return await manage_websocket_connection(request, user_id)
